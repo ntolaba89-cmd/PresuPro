@@ -1095,14 +1095,14 @@ export function QuoteBuilder() {
                   <p className="text-sm font-medium">
                     Llegaste al límite de 3 presupuestos gratuitos este mes.
                   </p>
-                  <a
-                    href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a9d8e0545f6d45f9b56ae7e57e4c9ee"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                  >
-                    Hazte Pro ahora por $9.90 USD/mes
-                  </a>
+                 <a
+                  href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a9d8e0545f6d45f9b56ae7e57e4c9ee"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                   Hazte Pro ahora
+                </a>
                 </div>
               ) : null}
               {/* --- FIN BOTÓN DE MERCADO PAGO --- */}
