@@ -169,6 +169,8 @@ export function QuoteBuilder() {
   });
   const [stepIndex, setStepIndex] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [limiteAlcanzado, setLimiteAlcanzado] = useState(false);
+  const [mostrarPago, setMostrarPago] = useState(false);
   const fallbackStep = {
     label: 'Negocio',
     eyebrow: 'Paso 01',
@@ -279,11 +281,12 @@ export function QuoteBuilder() {
       contador = { mes: mesActual, cantidad: 0 };
     }
 
-    // Si ya superó el límite, bloqueamos y mostramos el error
+     // Si ya superó el límite, bloqueamos y mostramos el error
     if (contador.cantidad >= LIMITE_GRATIS) {
-      setSubmitError("Llegaste al límite de 3 presupuestos gratuitos este mes. ¡Pasate a Pro por solo $9.90 USD/mes para generar ilimitados!");
+      setMostrarPago(true); // <-- ¡ESTA ES LA CLAVE!
+      setSubmitError("Llegaste al límite de 3 presupuestos gratuitos este mes.");
       toast.error("Límite alcanzado. Actualizá a Pro.");
-      return; // Corta la ejecución acá, no deja generar el PDF
+      return;
     }
     // --- FIN LÓGICA LÍMITE FREEMIUM ---
 
@@ -1086,12 +1089,24 @@ export function QuoteBuilder() {
                 </Card>
               ) : null}
 
-              {submitError ? (
-                <Alert variant="destructive">
-                  <AlertTitle>No se ha podido generar</AlertTitle>
-                  <AlertDescription>{submitError}</AlertDescription>
-                </Alert>
+                            {/* --- BOTÓN DE MERCADO PAGO --- */}
+              {mostrarPago ? (
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-6 text-center">
+                  <p className="text-sm font-medium">
+                    Llegaste al límite de 3 presupuestos gratuitos este mes.
+                  </p>
+                  <a
+                    href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a9d8e0545f6d45f9b56ae7e57e4c9ee"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Hazte Pro ahora por $9.90 USD/mes
+                  </a>
+                </div>
               ) : null}
+              {/* --- FIN BOTÓN DE MERCADO PAGO --- */}
+            
               <div className="flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center">
                 <Button type="button" variant="ghost" onClick={goBack} disabled={stepIndex === 0}>
                   <ArrowLeft className="size-4" aria-hidden="true" />
