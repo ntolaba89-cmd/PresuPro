@@ -1096,7 +1096,7 @@ export function QuoteBuilder() {
                     Llegaste al límite de 3 presupuestos gratuitos este mes.
                   </p>
                                  <a
-                  href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a9d8e0545f6d45f9b56ae7e57e4c9ee"
+                  href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a9d8e0545f6d45f9b56ae7e757e4c9ee"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full max-w-xs rounded-md bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
