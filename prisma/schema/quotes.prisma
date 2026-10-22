@@ -1,0 +1,49 @@
+// @polsia:user-owned — quote builder data models.
+
+model Quote {
+  id                     String      @id @default(cuid())
+  businessName           String
+  businessContactPerson  String?
+  businessPhone          String?
+  businessEmail          String?
+  businessAddress        String?
+  businessWebsite        String?
+  clientName             String
+  clientCompany          String?
+  clientPhone            String?
+  clientEmail            String?
+  clientAddress          String?
+  quoteNumber            String      @default("")
+  quoteDate              DateTime    @default(now())
+  validUntil             DateTime?
+  currency               String      @default("ARS")
+  depositMode            String      @default("fixed")
+  depositValueCents      Int         @default(0)
+  depositPercentageBps   Int         @default(0)
+  depositCents            Int         @default(0)
+  balanceCents            Int         @default(0)
+  subtotalCents          Int
+  totalCents             Int
+  conditionsPaymentTerms String?
+  conditionsDeadlines    String?
+  conditionsDelivery     String?
+  conditionsValidity     String?
+  observations           String?
+  additionalInfo         String?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  items                  QuoteItem[]
+}
+
+model QuoteItem {
+  id              String   @id @default(cuid())
+  quoteId         String
+  description     String
+  quantity        Int
+  unitPriceCents  Int
+  lineTotalCents  Int
+  createdAt       DateTime @default(now())
+  quote           Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://polsia.app/schema/installed.v1.json",
+  "_doc": "Machine-owned trust anchor (per D21). Installed modules + versions + install-hashes + ejected files + slot assignments + day-1 validator floor. Users must NOT edit this file; the framework can no longer trust the state if they do. Hand-editable per-module overrides live in .polsia/overrides.json. Path -> tier mapping lives in .polsia/ownership.json (generated from installed manifests).",
+  "template": {
+    "id": "polsia-next-v2",
+    "name": "polsia/template-next",
+    "version": "0.3.0",
+    "framework": "next",
+    "framework_version": "16.2.6",
+    "installed_at": "PLACEHOLDER_TIMESTAMP",
+    "install_hash": "PLACEHOLDER_HASH"
+  },
+  "modules": [
+    {
+      "name": "pdf",
+      "version": "0.1.0",
+      "target": "next",
+      "install_hash": "sha256:ff1760d088e32fab816bca2c052dbc95b88fa9851e1089511a4f9dc5e418aa25",
+      "installed_at": "2026-09-01T04:27:59.513Z",
+      "source": "Polsia-Inc/modules/modules/pdf",
+      "ref_sha": "909e2d5f9b590332c974852ff6fd03ae8e0d2b77",
+      "ownership_appends": [
+        {
+          "path": "src/lib/pdf/schema.ts",
+          "tier": "framework_owned"
+        },
+        {
+          "path": "src/lib/pdf/client.ts",
+          "tier": "framework_owned"
+        },
+        {
+          "path": "src/app/api/pdf/document/route.ts",
+          "tier": "framework_owned"
+        },
+        {
+          "path": "src/components/custom/pdf-download-button.tsx",
+          "tier": "user_owned"
+        },
+        {
+          "path": "src/lib/pdf/schema.ts",
+          "tier": "framework_owned"
+        },
+        {
+          "path": "src/lib/pdf/client.ts",
+          "tier": "framework_owned"
+        },
+        {
+          "path": "src/app/api/pdf/document/route.ts",
+          "tier": "framework_owned"
+        }
+      ],
+      "files": {
+        "src/lib/pdf/schema.ts": {
+          "path": "src/lib/pdf/schema.ts",
+          "tier": "framework_owned",
+          "integrity": "sha256:261863d2c7d56b149ca91d5c4bdbf970a0c4484c7db4fd5066803641c091e704",
+          "pinned": false,
+          "alias": null
+        },
+        "src/lib/pdf/client.ts": {
+          "path": "src/lib/pdf/client.ts",
+          "tier": "framework_owned",
+          "integrity": "sha256:0367714f7235f2cb710ca2512f2bfb1553fb739fed650d1e3d8d808d85dc7d96",
+          "pinned": false,
+          "alias": null
+        },
+        "src/app/api/pdf/document/route.ts": {
+          "path": "src/app/api/pdf/document/route.ts",
+          "tier": "framework_owned",
+          "integrity": "sha256:db3c8f6f00fa4720985b2d2815f17e9878ce17fe8eb199238fbdc88567b5ef95",
+          "pinned": false,
+          "alias": null
+        },
+        "src/components/custom/pdf-download-button.tsx": {
+          "path": "src/components/custom/pdf-download-button.tsx",
+          "tier": "user_owned",
+          "integrity": "sha256:3ad60b238f67755da3e70c902e0edf85727a9d98cb06045a54b24d8871854bcd",
+          "pinned": false,
+          "alias": null
+        }
+      }
+    }
+  ],
+  "install_hashes": {
+    "pdf": "sha256:ff1760d088e32fab816bca2c052dbc95b88fa9851e1089511a4f9dc5e418aa25"
+  },
+  "ejected_files": [],
+  "slot_assignments": {},
+  "day_1_floor": [
+    "no-secrets-in-client-bundle",
+    "server-only-import-on-secret-modules",
+    "agent-has-no-prod-db-credentials",
+    "db-ssl-required",
+    "parameterized-queries-only",
+    "security-headers-present",
+    "lockfile-committed-and-pinned",
+    "lifecycle-scripts-disabled",
+    "next-version-not-affected-by-cve-2025-29927"
+  ],
+  "_note_day_1_floor": "Templates are scaffolds with the shadcn/UI baseline shipped IN the template (components.json + cn() + a committed base primitive set + a next-themes ThemeProvider + a token-driven theme), plus the framework-native default DB client (Prisma for template-next). This floor is the scaffold-applicable validator set plus the data checks the baked-in DB client makes runnable on day 1. Other module-specific validators ship in module manifests and are added when those modules install. Validator names must exist in Polsia-Inc/modules/validators/README.md."
+}
