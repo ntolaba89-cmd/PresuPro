@@ -251,7 +251,7 @@ export function QuoteBuilder() {
       items: itemPayload,
     });
 
-    if (!payload.success) {
+        if (!payload.success) {
       const fieldErrors = quoteIssuesToFieldErrors(payload.error.issues);
       let payloadErrorStep = STEPS.length - 1;
       Object.entries(fieldErrors).forEach(([field, message]) => {
@@ -267,23 +267,49 @@ export function QuoteBuilder() {
       return;
     }
 
+    // --- INICIO LÓGICA LÍMITE FREEMIUM ---
+    const LIMITE_GRATIS = 3;
+    const mesActual = new Date().getMonth(); // 0 = Enero, 11 = Diciembre
+    const contadorGuardado = localStorage.getItem('presupro_contador');
+    
+    let contador = contadorGuardado ? JSON.parse(contadorGuardado) : { mes: mesActual, cantidad: 0 };
+
+    // Si cambió el mes, reiniciamos el contador
+    if (contador.mes !== mesActual) {
+      contador = { mes: mesActual, cantidad: 0 };
+    }
+
+    // Si ya superó el límite, bloqueamos y mostramos el error
+    if (contador.cantidad >= LIMITE_GRATIS) {
+      setSubmitError("Llegaste al límite de 3 presupuestos gratuitos este mes. ¡Pasate a Pro por solo $9.90 USD/mes para generar ilimitados!");
+      toast.error("Límite alcanzado. Actualizá a Pro.");
+      return; // Corta la ejecución acá, no deja generar el PDF
+    }
+    // --- FIN LÓGICA LÍMITE FREEMIUM ---
+
     try {
       const response = await apiFetch('/api/quotes', {
         method: 'POST',
         body: JSON.stringify(payload.data),
         schema: quoteResponseSchema,
       });
+      
+      // --- SI SE GUARDÓ BIEN, SUMAMOS 1 AL CONTADOR ---
+      contador.cantidad += 1;
+      localStorage.setItem('presupro_contador', JSON.stringify(contador));
+      // -----------------------------------------------
+
       toast.success('Presupuesto generado');
       router.push(`/presupuesto/${response.id}`);
-    } catch (error) {
+        } catch (error) {
       const applied = applyServerErrors(errorCause(error), setError);
       const message = applied
-        ? 'Revisa los campos marcados antes de generar.'
+        ? 'Revisá los campos marcados antes de generar.'
         : 'No hemos podido generar el presupuesto. Inténtalo de nuevo.';
       setSubmitError(message);
       toast.error(message);
     }
-  }
+  } // <-- ¡AGREGÁ ESTA LLAVE ACÁ!
 
   return (
     <main className="relative overflow-hidden">
