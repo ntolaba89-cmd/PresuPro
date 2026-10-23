@@ -36,6 +36,7 @@ export async function POST(request: Request) {
   try {
     const quote = await prisma.quote.create({
       data: {
+        userId: input.userId,
         quoteNumber: createQuoteNumber(quoteDate),
         quoteDate,
         validUntil: parseDateOnly(input.validUntil),

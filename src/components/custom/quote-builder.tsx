@@ -4,11 +4,12 @@
 
 import { ArrowLeft, ArrowRight, Check, Plus, ReceiptText, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type FieldPath, useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -123,8 +124,8 @@ function stepForField(field: string) {
   return 0;
 }
 
-export function QuoteBuilder() {
-  const router = useRouter();
+export function QuoteBuilder({ user }: { user: any }) {  const router = useRouter();
+  const supabase = createClient();
   const form = useForm<QuoteFormValues>({
     defaultValues: {
       businessName: '',
@@ -171,12 +172,26 @@ export function QuoteBuilder() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [limiteAlcanzado, setLimiteAlcanzado] = useState(false);
   const [mostrarPago, setMostrarPago] = useState(false);
+    const [presupuestosEsteMes, setPresupuestosEsteMes] = useState<number | null>(null);
   const fallbackStep = {
     label: 'Negocio',
     eyebrow: 'Paso 01',
     fields: [] as FieldPath<QuoteFormValues>[],
   };
   const currentStep = STEPS[stepIndex] ?? STEPS[0] ?? fallbackStep;
+
+    useEffect(() => {
+    async function fetchCount() {
+      const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const { count } = await supabase
+        .from('Quote')
+        .select('*', { count: 'exact', head: true })
+        .eq('userId', user.id)
+        .gte('createdAt', firstDayOfMonth);
+      setPresupuestosEsteMes(count ?? 0);
+    }
+    fetchCount();
+  }, [user.id, supabase]);
 
   async function goNext() {
     const valid = await trigger(currentStep.fields);
@@ -269,42 +284,38 @@ export function QuoteBuilder() {
       return;
     }
 
-    // --- INICIO LÓGICA LÍMITE FREEMIUM ---
-    const LIMITE_GRATIS = 3;
-    const mesActual = new Date().getMonth(); // 0 = Enero, 11 = Diciembre
-    const contadorGuardado = localStorage.getItem('presupro_contador');
+        // --- CONSULTAR LÍMITE EN SUPABASE ---
+    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
     
-    let contador = contadorGuardado ? JSON.parse(contadorGuardado) : { mes: mesActual, cantidad: 0 };
+    const { count, error: countError } = await supabase
+      .from('Quote')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', user.id)
+      .gte('createdAt', firstDayOfMonth);
 
-    // Si cambió el mes, reiniciamos el contador
-    if (contador.mes !== mesActual) {
-      contador = { mes: mesActual, cantidad: 0 };
+    if (countError) {
+      toast.error('Error al verificar el límite de presupuestos.');
+      return;
     }
 
-     // Si ya superó el límite, bloqueamos y mostramos el error
-    if (contador.cantidad >= LIMITE_GRATIS) {
-      setMostrarPago(true); // <-- ¡ESTA ES LA CLAVE!
+    if (count !== null && count >= 3) {
+      setMostrarPago(true);
       setSubmitError("Llegaste al límite de 3 presupuestos gratuitos este mes.");
       toast.error("Límite alcanzado. Actualizá a Pro.");
       return;
     }
-    // --- FIN LÓGICA LÍMITE FREEMIUM ---
+    // --- FIN CONSULTA LÍMITE ---
 
     try {
-      const response = await apiFetch('/api/quotes', {
+            const response = await apiFetch('/api/quotes', {
         method: 'POST',
-        body: JSON.stringify(payload.data),
+        body: JSON.stringify({ ...payload.data, userId: user.id }), // <-- Agregado
         schema: quoteResponseSchema,
       });
       
-      // --- SI SE GUARDÓ BIEN, SUMAMOS 1 AL CONTADOR ---
-      contador.cantidad += 1;
-      localStorage.setItem('presupro_contador', JSON.stringify(contador));
-      // -----------------------------------------------
-
       toast.success('Presupuesto generado');
       router.push(`/presupuesto/${response.id}`);
-        } catch (error) {
+    } catch (error) {
       const applied = applyServerErrors(errorCause(error), setError);
       const message = applied
         ? 'Revisá los campos marcados antes de generar.'
@@ -319,6 +330,18 @@ export function QuoteBuilder() {
       <div className="pointer-events-none absolute -left-48 top-20 size-[32rem] rounded-full bg-primary/10 blur-3xl" />
       <div className="container-page section relative">
         <div className="mx-auto max-w-5xl">
+                {/* BARRA DE USUARIO */}
+      <div className="border-b border-border/40 bg-muted/20 px-4 py-3 mb-6">
+        <div className="container-page flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">
+            Conectado como <strong className="text-foreground">{user.email}</strong>
+          </span>
+          <span className="text-muted-foreground">
+            {/* Acá iría el contador dinámico */}
+            Presupuestos este mes: <strong>{presupuestosEsteMes !== null ? `${presupuestosEsteMes} / 3` : '...'}</strong>
+          </span>
+        </div>
+      </div>
           <div className="mb-10 max-w-3xl">
             <div className="mb-5 flex items-center gap-3 text-eyebrow">
               <span className="h-px w-8 bg-primary" />

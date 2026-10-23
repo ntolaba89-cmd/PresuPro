@@ -39,6 +39,7 @@ export const quoteItemInputSchema = z.object({
 
 export const createQuoteSchema = z
   .object({
+        userId: z.string().optional(),
     businessName: z
       .string({ required_error: 'Indica tu negocio.' })
       .trim()

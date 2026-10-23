@@ -2,6 +2,7 @@
 
 model Quote {
   id                     String      @id @default(cuid())
+  userId                 String?
   businessName           String
   businessContactPerson  String?
   businessPhone          String?

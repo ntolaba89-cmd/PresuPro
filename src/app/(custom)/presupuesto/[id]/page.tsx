@@ -1,14 +1,18 @@
-// @polsia:user-owned — saved quote view shell.
-
-import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/db';
 import { QuoteView } from '@/components/custom/quote-view';
 
-export const metadata: Metadata = {
-  title: 'Presupuesto generado',
-  description: 'Consulta y descarga tu presupuesto profesional de PresuPro.',
-};
+export default async function QuoteViewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; // <-- Acá desenvolvemos la promesa
+  
+  const quote = await prisma.quote.findUnique({
+    where: { id: id }, // <-- Usamos el id ya obtenido
+    include: { items: true },
+  });
 
-export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  return <QuoteView id={id} />;
+  if (!quote) {
+    notFound();
+  }
+
+  return <QuoteView id={id} />; // <-- O el componente que corresponda
 }
