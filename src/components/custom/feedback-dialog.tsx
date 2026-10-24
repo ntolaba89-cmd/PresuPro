@@ -25,15 +25,19 @@ export function FeedbackDialog({ user }: { user?: any }) {
     if (!message.trim()) return;
 
     setLoading(true);
-    const { error } = await supabase.from('Feedback').insert({
-      id: crypto.randomUUID(),
-      userId: user?.id || null,
-      email: user?.email || null,
-      message: message.trim(),
-      createdAt: new Date().toISOString(),
-    });
+    const { error } = await supabase
+      .from('Feedback')
+      .insert({
+        id: crypto.randomUUID(),
+        userId: user?.id || null,
+        email: user?.email || null,
+        message: message.trim(),
+        createdAt: new Date().toISOString(),
+      })
+      .select(); // <-- ESTO ES LO QUE FALTA
 
     if (error) {
+      console.error('Error al enviar feedback:', error);
       toast.error('No se pudo enviar el feedback. Intentá de nuevo.');
     } else {
       toast.success('¡Gracias! Tu comentario nos ayuda a mejorar.');
