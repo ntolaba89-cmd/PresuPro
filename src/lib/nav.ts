@@ -30,7 +30,5 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Cómo funciona', href: '/#como-funciona', group: 'primary', order: 1 },
   { label: 'Para quién', href: '/#para-quien', group: 'primary', order: 2 },
-  { label: 'Crear presupuesto', href: '/presupuesto', group: 'secondary', order: 1 },
-  { label: 'Empezar', href: '/presupuesto', group: 'secondary', order: 0 },
   { label: 'Contacto', href: 'mailto:nt-novalab@polsia.app', group: 'footer', order: 0 },
 ];

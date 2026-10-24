@@ -21,20 +21,29 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { type NavGroup, type NavItem, navItems } from '@/lib/nav';
 import { siteName } from '@/lib/site';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase-client';
+import { useEffect, useState } from 'react';
+import { FeedbackDialog } from '@/components/custom/feedback-dialog';
 
-// Session seam. The template ships with NO auth library, so `requiresAuth` items
-// are hidden by default. We deliberately do NOT statically import an auth module
-// here — a hard `@/lib/auth-client` import would break the build whenever auth is
-// absent. When an auth module is installed it provides `@/lib/auth-client`; wire
-// its session check in here so authenticated-only links appear, e.g.:
-//
-//   import { useSession } from '@/lib/auth-client';
-//   function useIsAuthenticated() {
-//     const { data } = useSession();
-//     return Boolean(data?.session);
-//   }
 function useIsAuthenticated(): boolean {
-  return false;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  return isAuthenticated;
 }
 
 function visibleItems(group: NavGroup, isAuthenticated: boolean): NavItem[] {
@@ -47,9 +56,6 @@ function visibleItems(group: NavGroup, isAuthenticated: boolean): NavItem[] {
     );
 }
 
-// Inline top-bar slots (a slot = one link OR one `menu` dropdown), capped so the
-// bar can't grow wide. Kept here (not a sibling module) so a template upgrade
-// re-stamps the whole nav as one user-owned file rather than seeding an orphan.
 const MAX_PRIMARY_SLOTS = 5;
 
 type NavSlot =
@@ -61,8 +67,6 @@ const slotOrder = (s: NavSlot) =>
   s.type === 'link' ? itemOrder(s.item) : Math.min(...s.items.map(itemOrder));
 const slotLabel = (s: NavSlot) => (s.type === 'link' ? s.item.label : s.label);
 
-// Items sharing a `menu` collapse into one dropdown (at their earliest position);
-// the rest stay links. Sorts by `order` then label.
 function buildPrimarySlots(items: readonly NavItem[]): NavSlot[] {
   const links: NavSlot[] = [];
   const menus = new Map<string, NavItem[]>();
@@ -85,7 +89,6 @@ function buildPrimarySlots(items: readonly NavItem[]): NavSlot[] {
   );
 }
 
-// At most MAX_PRIMARY_SLOTS triggers render; the rest collapse into "More".
 function splitPrimarySlots(slots: NavSlot[]): { inline: NavSlot[]; overflow: NavSlot[] } {
   if (slots.length <= MAX_PRIMARY_SLOTS) return { inline: slots, overflow: [] };
   return {
@@ -96,22 +99,16 @@ function splitPrimarySlots(slots: NavSlot[]): { inline: NavSlot[]; overflow: Nav
 
 export function SiteNav() {
   const isAuthenticated = useIsAuthenticated();
-  // The brand links home, so drop a redundant '/' item from the rendered links.
   const primary = visibleItems('primary', isAuthenticated).filter((item) => item.href !== '/');
   const secondary = visibleItems('secondary', isAuthenticated);
 
-  // Top-bar slots (links + `menu` dropdowns); `inline` renders, `overflow` → "More".
   const slots = buildPrimarySlots(primary);
   const { inline, overflow } = splitPrimarySlots(slots);
   const collapsedCount = primary.length + secondary.length;
 
-  // Controlled so a drawer link both navigates AND dismisses the overlay; without
-  // this the Sheet stays open over the new route after client-side navigation.
   const [open, setOpen] = React.useState(false);
 
   const pathname = usePathname();
-  // Exact match for the root; segment-boundary match for everything else so
-  // '/blog' highlights on '/blog/post' but '/' never matches every route.
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
   const isSlotActive = (slot: NavSlot) =>
@@ -127,7 +124,6 @@ export function SiteNav() {
           {siteName}
         </Link>
 
-        {/* Desktop (md+): inline slots — direct links + `menu` dropdowns */}
         <div className="hidden items-center gap-1 md:flex">
           {inline.map((slot) =>
             slot.type === 'link' ? (
@@ -173,7 +169,6 @@ export function SiteNav() {
             ),
           )}
 
-          {/* Overflow: everything past the cap collapses here so the bar can't grow wide */}
           {overflow.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -188,7 +183,6 @@ export function SiteNav() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {overflow.map((slot, index) => {
-                  // Separate a menu group from its neighbours, but not plain links.
                   const fenced =
                     index > 0 && (slot.type === 'menu' || overflow[index - 1]?.type === 'menu');
                   return (
@@ -228,23 +222,37 @@ export function SiteNav() {
           )}
         </div>
 
-        {/* Right cluster: ml-auto pushes it right at every breakpoint */}
         <div className="ml-auto flex items-center gap-1">
-          {/* Desktop secondary buttons */}
           <div className="hidden items-center gap-1 md:flex">
-            {secondary.map((item) => (
-              <Button key={item.href} asChild variant="secondary" size="sm">
-                <Link href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
-                  {item.label}
-                </Link>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/presupuesto">Crear presupuesto</Link>
+            </Button>
+            {isAuthenticated && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/mis-presupuestos">Mis presupuestos</Link>
               </Button>
-            ))}
+            )}
+            {isAuthenticated ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }}
+              >
+                Cerrar sesión
+              </Button>
+            ) : (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/login">Ingresar</Link>
+              </Button>
+            )}
           </div>
 
-          {/* Always visible */}
           <ThemeToggle />
 
-          {/* Mobile (below md): burger + drawer — only when there's something to collapse */}
           {collapsedCount > 0 && (
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -258,7 +266,6 @@ export function SiteNav() {
                   <SheetTitle className="text-left">{siteName}</SheetTitle>
                 </SheetHeader>
                 <nav aria-label="Mobile" className="mt-6 flex flex-col gap-1 overflow-y-auto">
-                  {/* All slots, no overflow; a `menu` slot becomes a labeled section. */}
                   {slots.map((slot) =>
                     slot.type === 'link' ? (
                       <Button
@@ -305,26 +312,39 @@ export function SiteNav() {
                       </div>
                     ),
                   )}
-                  {secondary.length > 0 && (
-                    <div className="mt-2 flex flex-col gap-1 border-t border-border pt-4">
-                      {secondary.map((item) => (
-                        <Button
-                          key={item.href}
-                          asChild
-                          variant="secondary"
-                          className="w-full justify-start"
-                        >
-                          <Link
-                            href={item.href}
-                            aria-current={isActive(item.href) ? 'page' : undefined}
-                            onClick={() => setOpen(false)}
-                          >
-                            {item.label}
-                          </Link>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="mt-2 flex flex-col gap-1 border-t border-border pt-4">
+                    <Button asChild variant="secondary" className="w-full justify-start">
+                      <Link href="/presupuesto" onClick={() => setOpen(false)}>
+                        Crear presupuesto
+                      </Link>
+                    </Button>
+                    {isAuthenticated && (
+                      <Button asChild variant="ghost" className="w-full justify-start">
+                        <Link href="/mis-presupuestos" onClick={() => setOpen(false)}>
+                          Mis presupuestos
+                        </Link>
+                      </Button>
+                    )}
+                    {isAuthenticated ? (
+                      <Button
+                        variant="secondary"
+                        className="w-full justify-start"
+                        onClick={async () => {
+                          const supabase = createClient();
+                          await supabase.auth.signOut();
+                          window.location.reload();
+                        }}
+                      >
+                        Cerrar sesión
+                      </Button>
+                    ) : (
+                      <Button asChild variant="secondary" className="w-full justify-start">
+                        <Link href="/login" onClick={() => setOpen(false)}>
+                          Ingresar
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -339,6 +359,7 @@ export function SiteFooter() {
   const isAuthenticated = useIsAuthenticated();
   const footer = visibleItems('footer', isAuthenticated);
   if (footer.length === 0) return null;
+  
 
   return (
     <footer className="border-t border-border">
@@ -346,11 +367,15 @@ export function SiteFooter() {
         aria-label="Footer"
         className="mx-auto flex max-w-screen-xl flex-wrap items-center gap-1 px-4 py-6 text-sm"
       >
-        {footer.map((item) => (
+                {footer.map((item) => (
           <Button key={item.href} asChild variant="link" size="sm">
             <Link href={item.href}>{item.label}</Link>
           </Button>
         ))}
+        
+        {/* --- BOTÓN DE FEEDBACK --- */}
+        <FeedbackDialog />
+        {/* --- FIN BOTÓN DE FEEDBACK --- */}
       </nav>
     </footer>
   );
